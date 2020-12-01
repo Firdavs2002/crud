@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/Firdavs2002/gosql/cmd/app"
-	"github.com/Firdavs2002/gosql/pkg/customers"
+	"github.com/Firdavs2002/crud/cmd/app"
+	"github.com/Firdavs2002/crud/pkg/customers"
 	_ "github.com/jackc/pgx/v4/stdlib"
 )
 

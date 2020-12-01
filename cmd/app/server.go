@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/Firdavs2002/gosql/pkg/customers"
+	"github.com/Firdavs2002/crud/pkg/customers"
 )
 
 //Server ...
