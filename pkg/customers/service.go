@@ -2,29 +2,31 @@ package customers
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"log"
 	"time"
+
+	"github.com/jackc/pgx"
+	"github.com/jackc/pgx/v4/pgxpool"
 )
 
-//ErrNotFound ...
+//ErrNotFound возвращается, когда покупатель не найден.
 var ErrNotFound = errors.New("item not found")
 
-//ErrInternal ...
+//ErrInternal возвращается, когда произошла внутернняя ошибка.
 var ErrInternal = errors.New("internal error")
 
-//Service ..
+//Service описывает сервис работы с покупателям.
 type Service struct {
-	db *sql.DB
+	pool *pgxpool.Pool
 }
 
-//NewService ..
-func NewService(db *sql.DB) *Service {
-	return &Service{db: db}
+//NewService создаёт сервис.
+func NewService(pool *pgxpool.Pool) *Service {
+	return &Service{pool: pool}
 }
 
-//Customer ...
+//Customer представляет информацию о покупателе.
 type Customer struct {
 	ID      int64     `json:"id"`
 	Name    string    `json:"name"`
@@ -36,12 +38,13 @@ type Customer struct {
 //All ....
 func (s *Service) All(ctx context.Context) (cs []*Customer, err error) {
 
-	sqlStatement := `select * from customers`
+	sqlStatement := `SELECT * FROM customers`
 
-	rows, err := s.db.QueryContext(ctx, sqlStatement)
+	rows, err := s.pool.Query(ctx, sqlStatement)
 	if err != nil {
 		return nil, err
 	}
+
 	defer rows.Close()
 
 	for rows.Next() {
@@ -56,6 +59,7 @@ func (s *Service) All(ctx context.Context) (cs []*Customer, err error) {
 		if err != nil {
 			log.Println(err)
 		}
+
 		cs = append(cs, item)
 	}
 
@@ -65,9 +69,9 @@ func (s *Service) All(ctx context.Context) (cs []*Customer, err error) {
 //AllActive ....
 func (s *Service) AllActive(ctx context.Context) (cs []*Customer, err error) {
 
-	sqlStatement := `select * from customers where active=true`
+	sqlStatement := `SELECT * FROM customers WHERE active`
 
-	rows, err := s.db.QueryContext(ctx, sqlStatement)
+	rows, err := s.pool.Query(ctx, sqlStatement)
 	if err != nil {
 		return nil, err
 	}
@@ -95,69 +99,74 @@ func (s *Service) AllActive(ctx context.Context) (cs []*Customer, err error) {
 func (s *Service) ByID(ctx context.Context, id int64) (*Customer, error) {
 	item := &Customer{}
 
-	sqlStatement := `select * from customers where id=$1`
-	err := s.db.QueryRowContext(ctx, sqlStatement, id).Scan(
+	sqlStatement := `SELECT id, name, phone, active, customers FROM customers WHERE id = $1`
+	err := s.pool.QueryRow(ctx, sqlStatement, id).Scan(
 		&item.ID,
 		&item.Name,
 		&item.Phone,
 		&item.Active,
-		&item.Created)
+		&item.Created,
+	)
 
-	if err == sql.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, ErrNotFound
 	}
+
 	if err != nil {
 		log.Print(err)
 		return nil, ErrInternal
 	}
-	return item, nil
 
+	return item, nil
 }
 
 //ChangeActive ...
 func (s *Service) ChangeActive(ctx context.Context, id int64, active bool) (*Customer, error) {
 	item := &Customer{}
 
-	sqlStatement := `update customers set active=$2 where id=$1 returning *`
-	err := s.db.QueryRowContext(ctx, sqlStatement, id, active).Scan(
+	sqlStatement := `UPDATE customers SET active = $2 where id = $1 RETURNING *`
+	err := s.pool.QueryRow(ctx, sqlStatement, id, active).Scan(
 		&item.ID,
 		&item.Name,
 		&item.Phone,
 		&item.Active,
-		&item.Created)
+		&item.Created,
+	)
 
-	if err == sql.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, ErrNotFound
 	}
+
 	if err != nil {
 		log.Print(err)
 		return nil, ErrInternal
 	}
 	return item, nil
-
 }
 
 //Delete ...
 func (s *Service) Delete(ctx context.Context, id int64) (*Customer, error) {
 	item := &Customer{}
 
-	sqlStatement := `delete from customers  where id=$1 returning *`
-	err := s.db.QueryRowContext(ctx, sqlStatement, id).Scan(
+	sqlStatement := `DELETE FROM customers WHERE id = $1 RETURNING *`
+	err := s.pool.QueryRow(ctx, sqlStatement, id).Scan(
 		&item.ID,
 		&item.Name,
 		&item.Phone,
 		&item.Active,
-		&item.Created)
+		&item.Created,
+	)
 
-	if err == sql.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, ErrNotFound
 	}
+
 	if err != nil {
 		log.Print(err)
 		return nil, ErrInternal
 	}
-	return item, nil
 
+	return item, nil
 }
 
 //Save ...
@@ -166,27 +175,29 @@ func (s *Service) Save(ctx context.Context, customer *Customer) (c *Customer, er
 	item := &Customer{}
 
 	if customer.ID == 0 {
-		sqlStatement := `insert into customers(name, phone) values($1, $2) returning *`
-		err = s.db.QueryRowContext(ctx, sqlStatement, customer.Name, customer.Phone).Scan(
+		sqlStatement := `INSERT INTO customers(name, phone) VALUES($1, $2) RETURNING *`
+		err = s.pool.QueryRow(ctx, sqlStatement, customer.Name, customer.Phone).Scan(
 			&item.ID,
 			&item.Name,
 			&item.Phone,
 			&item.Active,
-			&item.Created)
+			&item.Created,
+		)
 	} else {
-		sqlStatement := `update customers set name=$1, phone=$2 where id=$3 returning *`
-		err = s.db.QueryRowContext(ctx, sqlStatement, customer.Name, customer.Phone, customer.ID).Scan(
+		sqlStatement := `UPDATE customers SET name = $1, phone = $2 WHERE id = $3 RETURNING *`
+		err = s.pool.QueryRow(ctx, sqlStatement, customer.Name, customer.Phone, customer.ID).Scan(
 			&item.ID,
 			&item.Name,
 			&item.Phone,
 			&item.Active,
-			&item.Created)
+			&item.Created,
+		)
 	}
 
 	if err != nil {
 		log.Print(err)
 		return nil, ErrInternal
 	}
-	return item, nil
 
+	return item, nil
 }
