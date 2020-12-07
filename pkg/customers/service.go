@@ -99,7 +99,7 @@ func (s *Service) AllActive(ctx context.Context) (cs []*Customer, err error) {
 func (s *Service) ByID(ctx context.Context, id int64) (*Customer, error) {
 	item := &Customer{}
 
-	sqlStatement := `SELECT id, name, phone, active, customers FROM customers WHERE id = $1`
+	sqlStatement := `SELECT id, name, phone, active, created FROM customers WHERE id = $1`
 	err := s.pool.QueryRow(ctx, sqlStatement, id).Scan(
 		&item.ID,
 		&item.Name,
