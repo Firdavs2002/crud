@@ -9,6 +9,7 @@ import (
 
 	"github.com/gorilla/mux"
 
+	"github.com/Firdavs2002/crud/cmd/app/middleware"
 	"github.com/Firdavs2002/crud/pkg/customers"
 )
 
@@ -46,6 +47,8 @@ func (s *Server) Init() {
 	s.mux.HandleFunc("/customers/{id:[0-9]+}/block", s.handleBlockByID).Methods(POST)
 	s.mux.HandleFunc("/customers/{id:[0-9]+}/block", s.handleUnBlockByID).Methods(DELETE)
 	s.mux.HandleFunc("/customers/{id:[0-9]+}", s.handleDelete).Methods(DELETE)
+
+	s.mux.Use(middleware.Base(s.customerSvc.Auth))
 }
 
 // хендлер метод для извлечения всех клиентов
