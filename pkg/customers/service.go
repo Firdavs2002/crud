@@ -233,12 +233,12 @@ func (s *Service) Auth(login, password string) bool {
 }
 
 //TokenForCustomer ....
-func (s *Service) TokenForCustomer(ctx context.Context, phone, password string) (string, error) {
+func (s *Service) TokenForCustomer(ctx context.Context, phone string, password string) (token string, err error) {
 
 	var hash string
 	var id int64
 
-	err := s.pool.QueryRow(ctx, "SELECT id, password FROM customers WHERE phone = $1", phone).Scan(&id, &hash)
+	err = s.pool.QueryRow(ctx, "SELECT id, password FROM customers WHERE phone = $1", phone).Scan(&password)
 
 	if err == pgx.ErrNoRows {
 		return "", ErrNoSuchUser
@@ -246,6 +246,7 @@ func (s *Service) TokenForCustomer(ctx context.Context, phone, password string) 
 	if err != nil {
 		return "", ErrInternal
 	}
+
 	err = bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
 	if err != nil {
 		return "", ErrInvalidPassword
@@ -257,7 +258,7 @@ func (s *Service) TokenForCustomer(ctx context.Context, phone, password string) 
 		return "", ErrInternal
 	}
 
-	token := hex.EncodeToString(buffer)
+	token = hex.EncodeToString(buffer)
 	_, err = s.pool.Exec(ctx, "INSERT INTO customers_tokens(token, customer_id) VALUES($1, $2)", token, id)
 	if err != nil {
 		return "", ErrInternal
