@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/gorilla/mux"
+	"golang.org/x/crypto/bcrypt"
 
 	"github.com/Firdavs2002/crud/pkg/customers"
 )
@@ -231,12 +232,20 @@ func (s *Server) handleSave(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	customer, err := s.customerSvc.Save(r.Context(), item)
-
+	hashed, err := bcrypt.GenerateFromPassword([]byte(item.Password), bcrypt.DefaultCost)
 	if err != nil {
 		errorWriter(w, http.StatusInternalServerError, err)
 		return
 	}
+
+	item.Password = string(hashed)
+
+	customer, err := s.customerSvc.Save(r.Context(), item)
+	if err != nil {
+		errorWriter(w, http.StatusInternalServerError, err)
+		return
+	}
+
 	respondJSON(w, customer)
 }
 

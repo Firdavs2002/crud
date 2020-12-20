@@ -14,12 +14,12 @@ CREATE TABLE managers
 (
     id        BIGSERIAL PRIMARY KEY,
     name      TEXT      NOT NULL,
-    login     TEXT      NOT NULL UNIQUE,
-    password  TEXT      NOT NULL,
     salary    INTEGER   NOT NULL CHECK ( salary > 0 ),
     plan      INTEGER   NOT NULL CHECK ( salary > 0 ),
     boss_id   BIGINT    REFERENCES managers,
     deparment TEXT,
+    login     TEXT      NOT NULL UNIQUE,
+    password  TEXT      NOT NULL,
     active    BOOLEAN   NOT NULL DEFAULT TRUE,
     created   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -29,8 +29,8 @@ CREATE TABLE customers
 (
     id        BIGSERIAL PRIMARY KEY,
     name      TEXT      NOT NULL,
-    password  TEXT      NOT NULL,
     phone     TEXT      NOT NULL UNIQUE,
+    password  TEXT      NOT NULL,
     active    BOOLEAN   NOT NULL DEFAULT TRUE,
     created   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
