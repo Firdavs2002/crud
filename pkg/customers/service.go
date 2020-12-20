@@ -279,8 +279,8 @@ func (s *Service) AuthenticateCustomer(ctx context.Context, tkn string) (int64, 
 		return 0, ErrInternal
 	}
 
-	tNow := time.Now().Format("2006-01-02 15:04:05")
-	tEnd := expire.Format("2006-01-02 15:04:05")
+	tNow := time.Now().Unix()
+	tEnd := expire.Unix()
 
 	if tNow > tEnd {
 		return 0, ErrExpireToken
