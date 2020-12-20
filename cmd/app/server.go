@@ -9,7 +9,6 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/Firdavs2002/crud/cmd/app/middleware"
 	"github.com/Firdavs2002/crud/pkg/customers"
 )
 
@@ -37,18 +36,17 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 //Init инициализирует сервер (регистрирует все Handler'ы)
 func (s *Server) Init() {
-	// s.mux.HandleFunc("/customers.getAll", s.handleGetAllCustomers)
 	s.mux.HandleFunc("/customers", s.handleGetAllCustomers).Methods(GET)
-	// s.mux.HandleFunc("/customers.getById", s.handleGetCustomerByID)
 	s.mux.HandleFunc("/customers/{id:[0-9]+}", s.handleGetCustomerByID).Methods(GET)
-	// s.mux.HandleFunc("/customers.save", s.handleSave)
 	s.mux.HandleFunc("/customers", s.handleSave).Methods(POST)
 	s.mux.HandleFunc("/customers/active", s.handleGetAllActiveCustomers).Methods(GET)
 	s.mux.HandleFunc("/customers/{id:[0-9]+}/block", s.handleBlockByID).Methods(POST)
 	s.mux.HandleFunc("/customers/{id:[0-9]+}/block", s.handleUnBlockByID).Methods(DELETE)
 	s.mux.HandleFunc("/customers/{id:[0-9]+}", s.handleDelete).Methods(DELETE)
 
-	s.mux.Use(middleware.Base(s.customerSvc.Auth))
+	s.mux.HandleFunc("/api/customers/token", s.handleCreateToken).Methods(POST)
+	s.mux.HandleFunc("/api/customers/token/validate", s.handleValidateToken).Methods(POST)
+	// s.mux.Use(middleware.Base(s.customerSvc.Auth))
 }
 
 // хендлер метод для извлечения всех клиентов
@@ -224,24 +222,8 @@ func (s *Server) handleDelete(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleSave(w http.ResponseWriter, r *http.Request) {
-	/*
-		ip := r.FormValue("id")
-		name := r.FormValue("name")
-		phone := r.FormValue("phone")
-
-		id, err := strconv.Atoi(ip)
-		if err != nil {
-			errorWriter(w, http.StatusBadRequest, err)
-			return
-		}
-		//проверка на пустату
-		if name == "" && phone == "" {
-			errorWriter(w, http.StatusBadRequest, err)
-			return
-		}
-	*/
-
 	var item *customers.Customer
+
 	err := json.NewDecoder(r.Body).Decode(&item)
 	if err != nil {
 		log.Println(err)
@@ -258,12 +240,73 @@ func (s *Server) handleSave(w http.ResponseWriter, r *http.Request) {
 	respondJSON(w, customer)
 }
 
+func (s *Server) handleCreateToken(w http.ResponseWriter, r *http.Request) {
+
+	var item *struct {
+		Login    string `json:"login"`
+		Password string `json:"password"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&item); err != nil {
+		//вызываем фукцию для ответа с ошибкой
+		errorWriter(w, http.StatusBadRequest, err)
+		return
+	}
+
+	token, err := s.customerSvc.TokenForCustomer(r.Context(), item.Login, item.Password)
+
+	if err != nil {
+		//вызываем фукцию для ответа с ошибкой
+		errorWriter(w, http.StatusBadRequest, err)
+		return
+	}
+
+	//вызываем функцию для ответа в формате JSON
+	respondJSON(w, map[string]interface{}{"status": "ok", "token": token})
+}
+
+func (s *Server) handleValidateToken(w http.ResponseWriter, r *http.Request) {
+	var item *struct {
+		Token string `json:"token"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&item); err != nil {
+		//вызываем фукцию для ответа с ошибкой
+		errorWriter(w, http.StatusBadRequest, err)
+		return
+	}
+
+	id, err := s.customerSvc.AuthenticateCustomer(r.Context(), item.Token)
+
+	if err != nil {
+		status := http.StatusInternalServerError
+		text := "internal error"
+		if err == customers.ErrNoSuchUser {
+			status = http.StatusNotFound
+			text = "not found"
+		}
+		if err == customers.ErrExpireToken {
+			status = http.StatusBadRequest
+			text = "expired"
+		}
+
+		respondJSONWithCode(w, status, map[string]interface{}{"status": "fail", "reason": text})
+		return
+	}
+
+	res := make(map[string]interface{})
+	res["status"] = "ok"
+	res["customerId"] = id
+
+	respondJSONWithCode(w, http.StatusOK, res)
+}
+
 func errorWriter(w http.ResponseWriter, httpSts int, err error) {
 	log.Print(err)
 	http.Error(w, http.StatusText(httpSts), httpSts)
 }
-func respondJSON(w http.ResponseWriter, iData interface{}) {
 
+func respondJSON(w http.ResponseWriter, iData interface{}) {
 	data, err := json.Marshal(iData)
 
 	if err != nil {
@@ -272,6 +315,24 @@ func respondJSON(w http.ResponseWriter, iData interface{}) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	_, err = w.Write(data)
+	if err != nil {
+		log.Print(err)
+	}
+}
+
+func respondJSONWithCode(w http.ResponseWriter, sts int, iData interface{}) {
+	data, err := json.Marshal(iData)
+
+	if err != nil {
+		errorWriter(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	w.WriteHeader(sts)
+
 	_, err = w.Write(data)
 	if err != nil {
 		log.Print(err)

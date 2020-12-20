@@ -4,5 +4,6 @@ Content-Type: application/json
 {
     "id": 0,
     "name": "Katya",
-    "phone": "+992000000000"
+    "password": "katka123",
+    "phone": "+992900000000"
 }

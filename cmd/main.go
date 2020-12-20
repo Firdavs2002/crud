@@ -26,7 +26,6 @@ func main() {
 		log.Print(err)
 		return
 	}
-
 }
 
 func execute(host, port, dsn string) (err error) {

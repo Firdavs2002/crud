@@ -16,6 +16,17 @@ import (
 )
 
 func main() {
+	/*
+		password := "secret"
+		hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefultCost)
+		if err != nil {
+			log.Print(err)
+			os.Exit(1)
+		}
+		log.Print(hex.EnxodeToString(hash))
+
+		err = bcrypt.CompareHashAndPassword(hash)
+	*/
 	// адрес подкулючения
 	// протокол://логи:пароль@хост:порт/бд
 
