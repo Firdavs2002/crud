@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/Firdvs2002/crud/cmd/app/middleware"
-	"github.com/Firdvs2002/crud/pkg/managers"
+	"github.com/Firdvas2002/crud/cmd/app/middleware"
+	"github.com/Firdvas2002/crud/pkg/managers"
 	"github.com/gorilla/mux"
 )
 
