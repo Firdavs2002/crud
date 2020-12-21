@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/Firdvas2002/crud/pkg/customers"
+	"github.com/Firdavs2002/crud/pkg/customers"
 	"golang.org/x/crypto/bcrypt"
 )
 
