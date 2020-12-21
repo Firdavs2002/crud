@@ -68,7 +68,6 @@ func (s *Server) handleGetAllActiveCustomers(w http.ResponseWriter, r *http.Requ
 
 	items, err := s.customerSvc.AllActive(r.Context())
 	if err != nil {
-		//вызываем фукцию для ответа с ошибкой
 		errorWriter(w, http.StatusInternalServerError, err)
 		return
 	}
@@ -87,29 +86,22 @@ func (s *Server) handleGetCustomerByID(w http.ResponseWriter, r *http.Request) {
 
 	// переобразуем его в число
 	id, err := strconv.ParseInt(idParam, 10, 64)
-	//если получили ошибку то отвечаем с ошибкой
 	if err != nil {
-		//вызываем фукцию для ответа с ошибкой
 		errorWriter(w, http.StatusBadRequest, err)
 		return
 	}
 
-	//получаем баннер из сервиса
 	item, err := s.customerSvc.ByID(r.Context(), id)
-
 	if errors.Is(err, customers.ErrNotFound) {
-		//вызываем фукцию для ответа с ошибкой
 		errorWriter(w, http.StatusNotFound, err)
 		return
 	}
 
-	//если получили ошибку то отвечаем с ошибкой
 	if err != nil {
-		//вызываем фукцию для ответа с ошибкой
 		errorWriter(w, http.StatusInternalServerError, err)
 		return
 	}
-	//вызываем функцию для ответа в формате JSON
+
 	respondJSON(w, item)
 }
 
@@ -121,31 +113,24 @@ func (s *Server) handleBlockByID(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
-	// переобразуем его в число
+
 	id, err := strconv.ParseInt(idParam, 10, 64)
-	//если получили ошибку то отвечаем с ошибкой
 	if err != nil {
-		//вызываем фукцию для ответа с ошибкой
 		errorWriter(w, http.StatusBadRequest, err)
 		return
 	}
 
-	//получаем баннер из сервиса
 	item, err := s.customerSvc.ChangeActive(r.Context(), id, false)
-
 	if errors.Is(err, customers.ErrNotFound) {
-		//вызываем фукцию для ответа с ошибкой
 		errorWriter(w, http.StatusNotFound, err)
 		return
 	}
 
-	//если получили ошибку то отвечаем с ошибкой
 	if err != nil {
-		//вызываем фукцию для ответа с ошибкой
 		errorWriter(w, http.StatusInternalServerError, err)
 		return
 	}
-	//вызываем функцию для ответа в формате JSON
+
 	respondJSON(w, item)
 }
 
@@ -157,31 +142,23 @@ func (s *Server) handleUnBlockByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// переобразуем его в число
 	id, err := strconv.ParseInt(idParam, 10, 64)
-	//если получили ошибку то отвечаем с ошибкой
 	if err != nil {
-		//вызываем фукцию для ответа с ошибкой
 		errorWriter(w, http.StatusBadRequest, err)
 		return
 	}
 
-	//получаем баннер из сервиса
 	item, err := s.customerSvc.ChangeActive(r.Context(), id, true)
-
 	if errors.Is(err, customers.ErrNotFound) {
-		//вызываем фукцию для ответа с ошибкой
 		errorWriter(w, http.StatusNotFound, err)
 		return
 	}
 
-	//если получили ошибку то отвечаем с ошибкой
 	if err != nil {
-		//вызываем фукцию для ответа с ошибкой
 		errorWriter(w, http.StatusInternalServerError, err)
 		return
 	}
-	//вызываем функцию для ответа в формате JSON
+
 	respondJSON(w, item)
 }
 
@@ -194,41 +171,32 @@ func (s *Server) handleDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// переобразуем его в число
 	id, err := strconv.ParseInt(idParam, 10, 64)
-	//если получили ошибку то отвечаем с ошибкой
 	if err != nil {
-		//вызываем фукцию для ответа с ошибкой
 		errorWriter(w, http.StatusBadRequest, err)
 		return
 	}
 
-	//получаем баннер из сервиса
 	item, err := s.customerSvc.Delete(r.Context(), id)
-
 	if errors.Is(err, customers.ErrNotFound) {
-		//вызываем фукцию для ответа с ошибкой
 		errorWriter(w, http.StatusNotFound, err)
 		return
 	}
 
-	//если получили ошибку то отвечаем с ошибкой
 	if err != nil {
-		//вызываем фукцию для ответа с ошибкой
 		errorWriter(w, http.StatusInternalServerError, err)
 		return
 	}
-	//вызываем функцию для ответа в формате JSON
+
 	respondJSON(w, item)
 }
 
 func (s *Server) handleSave(w http.ResponseWriter, r *http.Request) {
+
 	var item *customers.Customer
 
-	err := json.NewDecoder(r.Body).Decode(&item)
-	if err != nil {
-		log.Println(err)
-		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+	if err := json.NewDecoder(r.Body).Decode(&item); err != nil {
+		errorWriter(w, http.StatusBadRequest, err)
 		return
 	}
 
@@ -250,14 +218,12 @@ func (s *Server) handleSave(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleCreateToken(w http.ResponseWriter, r *http.Request) {
-
 	var item *struct {
 		Login    string `json:"login"`
 		Password string `json:"password"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&item); err != nil {
-		//вызываем фукцию для ответа с ошибкой
 		errorWriter(w, http.StatusBadRequest, err)
 		return
 	}
@@ -265,12 +231,10 @@ func (s *Server) handleCreateToken(w http.ResponseWriter, r *http.Request) {
 	token, err := s.customerSvc.TokenForCustomer(r.Context(), item.Login, item.Password)
 
 	if err != nil {
-		//вызываем фукцию для ответа с ошибкой
 		errorWriter(w, http.StatusBadRequest, err)
 		return
 	}
 
-	//вызываем функцию для ответа в формате JSON
 	respondJSON(w, map[string]interface{}{"status": "ok", "token": token})
 }
 
@@ -280,7 +244,6 @@ func (s *Server) handleValidateToken(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&item); err != nil {
-		//вызываем фукцию для ответа с ошибкой
 		errorWriter(w, http.StatusBadRequest, err)
 		return
 	}
@@ -290,6 +253,7 @@ func (s *Server) handleValidateToken(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		status := http.StatusInternalServerError
 		text := "internal error"
+
 		if err == customers.ErrNoSuchUser {
 			status = http.StatusNotFound
 			text = "not found"

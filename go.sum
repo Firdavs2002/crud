@@ -1,4 +1,6 @@
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
+github.com/Habibullo-1999/crud v0.0.0-20201218055413-6426cfdbb99b h1:t71bEuihwThm1yo4qiyuFCMZ+Lj4VtmEdANV5G9Bbt0=
+github.com/Habibullo-1999/crud v0.0.0-20201218055413-6426cfdbb99b/go.mod h1:InZH69SZYOZHZ3eDds+X1M7gsdN5H6yn3XtJVEr3aiA=
 github.com/cockroachdb/apd v1.1.0/go.mod h1:8Sl8LxpKi29FqWXR16WEFZRNSz3SoPzUzeMeY4+DwBQ=
 github.com/coreos/go-systemd v0.0.0-20190321100706-95778dfbb74e/go.mod h1:F5haX7vjVVG0kc13fIWeqUViNPyEJxv/OmvnBo0Yme4=
 github.com/coreos/go-systemd v0.0.0-20190719114852-fd7a80b32e1f/go.mod h1:F5haX7vjVVG0kc13fIWeqUViNPyEJxv/OmvnBo0Yme4=

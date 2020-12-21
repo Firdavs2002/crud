@@ -8,7 +8,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/jackc/pgx"
+	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -220,8 +220,8 @@ func (s *Service) Save(ctx context.Context, customer *Customer) (c *Customer, er
 }
 
 // Auth - sign in
-func (s *Service) Auth(login, password string) bool {
-	query := `SELECT login, password FROM managers WHERE login=$1 and password=$2`
+func (s *Service) Auth(login string, password string) bool {
+	query := `SELECT login, password FROM managers WHERE login = $1 AND password = $2`
 
 	err := s.pool.QueryRow(context.Background(), query, login, password).Scan(&login, &password)
 	if err != nil {
@@ -234,12 +234,10 @@ func (s *Service) Auth(login, password string) bool {
 
 //TokenForCustomer ....
 func (s *Service) TokenForCustomer(ctx context.Context, phone string, password string) (token string, err error) {
-
 	var hash string
 	var id int64
 
-	err = s.pool.QueryRow(ctx, "SELECT id, password FROM customers WHERE phone = $1", phone).Scan(&password)
-
+	err = s.pool.QueryRow(ctx, `SELECT id, password FROM customers WHERE phone = $1`, phone).Scan(&id, &hash)
 	if err == pgx.ErrNoRows {
 		return "", ErrNoSuchUser
 	}
@@ -253,13 +251,15 @@ func (s *Service) TokenForCustomer(ctx context.Context, phone string, password s
 	}
 
 	buffer := make([]byte, 256)
+
 	n, err := rand.Read(buffer)
+
 	if n != len(buffer) || err != nil {
 		return "", ErrInternal
 	}
 
 	token = hex.EncodeToString(buffer)
-	_, err = s.pool.Exec(ctx, "INSERT INTO customers_tokens(token, customer_id) VALUES($1, $2)", token, id)
+	_, err = s.pool.Exec(ctx, `INSERT INTO customers_tokens(token,customer_id) VALUES($1, $2)`, token, id)
 	if err != nil {
 		return "", ErrInternal
 	}
@@ -268,11 +268,10 @@ func (s *Service) TokenForCustomer(ctx context.Context, phone string, password s
 }
 
 //AuthenticateCustomer ...
-func (s *Service) AuthenticateCustomer(ctx context.Context, tkn string) (int64, error) {
-	var id int64
+func (s *Service) AuthenticateCustomer(ctx context.Context, token string) (id int64, err error) {
 	var expire time.Time
 
-	err := s.pool.QueryRow(ctx, "SELECT customer_id, expire FROM customers_tokens WHERE token=$1", tkn).Scan(&id, &expire)
+	err = s.pool.QueryRow(ctx, `SELECT customer_id, expire FROM customers_tokens WHERE token = $1`, token).Scan(&id, &expire)
 	if err == pgx.ErrNoRows {
 		return 0, ErrNoSuchUser
 	}

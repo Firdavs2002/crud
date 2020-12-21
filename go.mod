@@ -3,6 +3,7 @@ module github.com/Firdavs2002/crud
 go 1.15
 
 require (
+	github.com/Habibullo-1999/crud v0.0.0-20201218055413-6426cfdbb99b // indirect
 	github.com/gorilla/mux v1.8.0
 	github.com/jackc/pgx v3.6.2+incompatible
 	github.com/jackc/pgx/v4 v4.9.2
